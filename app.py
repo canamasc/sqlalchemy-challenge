@@ -116,7 +116,7 @@ def tobs():
         all_tobs.append(tobs_dict)
     return jsonify(all_tobs)
 
-
+@app.route("/api/v1.0/<start>", defaults={'end':'2017-08-23'})
 @app.route("/api/v1.0/<start>/<end>")
 # Make default value for end date equal most recent date
 # Make error message (like in activity) where there is 404 error if
@@ -127,7 +127,7 @@ def fromdates(start, end='2017-08-23'):
     
     if len(start) != 10 or start[4] != '-' or start[7] != '-' or len(end) != 10 or end[4] != '-' or end[7] != '-':
         session.close()
-        return jsonify({"error: Ensure date is in YYYY-MM-DD format."}), 404
+        return jsonify([{"error": "Ensure date is in YYYY-MM-DD format."}]), 404
     # Check to see if dates are in the table
     yes_start = False
     yes_end = False
@@ -155,7 +155,7 @@ def fromdates(start, end='2017-08-23'):
             alldates.append(datedict)
         return jsonify(alldates)
     session.close()
-    return jsonify({"error: Date not found."}), 404
+    return jsonify({"error": "Date not found."}), 404
     
 
 if __name__ == "__main__":
