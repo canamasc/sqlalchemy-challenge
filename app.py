@@ -41,8 +41,8 @@ def welcome():
         f"/api/v1.0/precipitation<br/>"
         f"/api/v1.0/stations<br/>"
         f"/api/v1.0/tobs<br/>"
-        f"/api/v1.0/<start><br/>"
-        f"/api/v1.0/<start>/<end>"
+        f"/api/v1.0/your_start_date/your_end_date<br/>"
+        f"Please use YYYY-MM-DD format for dates."
     )
 
 @app.route("/api/v1.0/precipitation")
@@ -116,6 +116,47 @@ def tobs():
         all_tobs.append(tobs_dict)
     return jsonify(all_tobs)
 
+
+@app.route("/api/v1.0/<start>/<end>")
+# Make default value for end date equal most recent date
+# Make error message (like in activity) where there is 404 error if
+# date is not entered in YYYY-MM-DD format
+def fromdates(start, end='2017-08-23'):
+    session = Session(engine)
+    # Check format
+    
+    if len(start) != 10 or start[4] != '-' or start[7] != '-' or len(end) != 10 or end[4] != '-' or end[7] != '-':
+        session.close()
+        return jsonify({"error: Ensure date is in YYYY-MM-DD format."}), 404
+    # Check to see if dates are in the table
+    yes_start = False
+    yes_end = False
+    dates = engine.execute('SELECT date from Measurement').fetchall()
+    for i in range(0,len(dates)):
+        if start in dates[i][0]:
+            yes_start = True
+        if end in dates[i][0]:
+            yes_end = True
+
+    if yes_end and yes_start:
+        results = session.query(Measurement.date, func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
+                group_by(Measurement.date).\
+                filter(Measurement.date >= start).\
+                 filter(Measurement.date <= end).\
+                order_by(Measurement.date)
+        session.close()
+        alldates=[]
+        for date, TMIN, TAVG, TMAX in results:
+            datedict={}
+            datedict['date'] = date
+            datedict['TMIN'] = TMIN
+            datedict['TAVG'] = TAVG
+            datedict['TMAX'] = TMAX
+            alldates.append(datedict)
+        return jsonify(alldates)
+    session.close()
+    return jsonify({"error: Date not found."}), 404
+    
 
 if __name__ == "__main__":
     app.run(debug=True)
