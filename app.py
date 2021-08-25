@@ -139,21 +139,37 @@ def fromdates(start, end='2017-08-23'):
             yes_end = True
 
     if yes_end and yes_start:
-        results = session.query(Measurement.date, func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
-                group_by(Measurement.date).\
+        # Get min, avg, max for overall range given
+
+        results = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
                 filter(Measurement.date >= start).\
-                 filter(Measurement.date <= end).\
-                order_by(Measurement.date)
+                 filter(Measurement.date <= end)
         session.close()
         alldates=[]
-        for date, TMIN, TAVG, TMAX in results:
+        for TMIN, TAVG, TMAX in results:
             datedict={}
-            datedict['date'] = date
             datedict['TMIN'] = TMIN
             datedict['TAVG'] = TAVG
             datedict['TMAX'] = TMAX
             alldates.append(datedict)
         return jsonify(alldates)
+
+        # Get min, avg, max for EACH date in given range
+        # results = session.query(Measurement.date, func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
+        #         group_by(Measurement.date).\
+        #         filter(Measurement.date >= start).\
+        #          filter(Measurement.date <= end).\
+        #         order_by(Measurement.date)
+        # session.close()
+        # alldates=[]
+        # for date, TMIN, TAVG, TMAX in results:
+        #     datedict={}
+        #     datedict['date'] = date
+        #     datedict['TMIN'] = TMIN
+        #     datedict['TAVG'] = TAVG
+        #     datedict['TMAX'] = TMAX
+        #     alldates.append(datedict)
+        # return jsonify(alldates)
     session.close()
     return jsonify({"error": "Date not found."}), 404
     
